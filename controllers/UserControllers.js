@@ -32,6 +32,10 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "All fields are required" });
     }
 
+    if (role && !["user", "admin", "provider"].includes(role)) {
+      return res.status(400).json({ message: "Invalid role" });
+    }
+
     let userRole;
     if (role) {
       userRole = role;
