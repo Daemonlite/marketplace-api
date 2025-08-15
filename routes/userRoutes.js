@@ -15,20 +15,20 @@ import {
   resendOtp
 } from "../controllers/UserControllers.js";
 
-const ruserRoutes = express.Router();
+const userRoutes = express.Router();
 
 
-ruserRoutes.get("/", verifyToken, fetchUsers);
-ruserRoutes.get("/:id", verifyToken, fetchUserById);
-ruserRoutes.get("/blocked-users", verifyToken, fetchBlockedUsers);
-ruserRoutes.post("/register", registerUser);
-ruserRoutes.post("/verify-user", verifyUser);
-ruserRoutes.post("/resend-otp", resendOtp);
-ruserRoutes.post("/login", loginUser);
-ruserRoutes.post("/forgot-password", forgotPassword);
-ruserRoutes.post("/verify-user-token", verifyUserToken);
-ruserRoutes.post("/reset-password", resetPassword);
-ruserRoutes.post("/block-user/:id", blockUser);
-ruserRoutes.post("/unblock-user/:id", unblockUser);
+userRoutes.get("/", verifyToken, fetchUsers);
+userRoutes.get("/:id", verifyToken, fetchUserById);
+userRoutes.get("/blocked-users", verifyToken, fetchBlockedUsers);
+userRoutes.post("/register", registerUser);
+userRoutes.post("/verify-user", verifyUser);
+userRoutes.post("/resend-otp", resendOtp);
+userRoutes.post("/login", loginUser);
+userRoutes.post("/forgot-password", forgotPassword);
+userRoutes.post("/verify-user-token", verifyUserToken);
+userRoutes.post("/reset-password", resetPassword);
+userRoutes.post("/block-user/:id", blockUser);
+userRoutes.post("/unblock-user/:id", unblockUser);
 
-export default ruserRoutes;
+export default userRoutes;

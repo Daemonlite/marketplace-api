@@ -1,13 +1,14 @@
-import Queue from 'bull';
-import { setTimeout } from 'timers/promises';
-import sendOtp from '../helpers/sendOtp.js';
+import Queue from "bull";
+import { setTimeout } from "timers/promises";
+import sendOtp from "../helpers/sendOtp.js";
+import { uploadImage } from "../helpers/uploadImage.js";
 
 // Create a queue
-const taskQueue = new Queue('email queue', process.env.REDIS_CLIENT, {
+const taskQueue = new Queue("email queue", process.env.REDIS_CLIENT, {
   defaultJobOptions: {
     attempts: 3,
     backoff: {
-      type: 'exponential',
+      type: "exponential",
       delay: 1000,
     },
   },
@@ -17,20 +18,26 @@ const taskQueue = new Queue('email queue', process.env.REDIS_CLIENT, {
 const sendOtpLayer = async (job) => {
   const { to } = job.data;
   // Your email sending logic here
-  sendOtp(to)
+  sendOtp(to);
   console.log(`Sending email to ${to}`);
   // Simulate work with modern timers/promises
   await setTimeout(2000);
 };
 
-// Add processor
-taskQueue.process( sendOtpLayer );
+const uploadImageLayer = async (job) => {
+  const { file } = job.data;
+  uploadImage(file);
+};
 
-taskQueue.on('completed', (job) => {
+// Add processor
+taskQueue.process(sendOtpLayer);
+taskQueue.process(uploadImageLayer);
+
+taskQueue.on("completed", (job) => {
   console.log(`Job ${job.id} completed`);
 });
 
-taskQueue.on('failed', (job, err) => {
+taskQueue.on("failed", (job, err) => {
   console.error(`Job ${job.id} failed:`, err);
 });
 
@@ -39,6 +46,8 @@ const sendOtpLater = (to) => {
   return taskQueue.add({ to });
 };
 
+const uploadImageLater = (file) => {
+  return taskQueue.add({ file });
+};
 
-
-export { sendOtpLater, taskQueue };
+export { sendOtpLater, uploadImageLater, taskQueue };

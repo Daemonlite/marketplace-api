@@ -1,7 +1,7 @@
 import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
-import { sendOtpLater } from "../queues/index.js"
+import { sendOtpLater } from "../queues/index.js";
 import redisClient from "../helpers/redisClient.js";
 
 export const fetchUsers = async (req, res) => {
@@ -225,6 +225,18 @@ export const blockUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    if (user.isBlocked) {
+      return res.status(400).json({ message: "User is already blocked" });
+    }
+
+    const currentUser = req.user._id;
+    const associatedUser = await User.findById(currentUser);
+    if (associatedUser.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to block users" });
+    }
     user.isBlocked = true;
     await user.save();
     return res.status(200).json({ message: "User blocked successfully" });
@@ -241,6 +253,14 @@ export const unblockUser = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
+
+    const currentUser = req.user._id;
+    const associatedUser = await User.findById(currentUser);
+    if (associatedUser.role !== "admin") {
+      return res
+        .status(403)
+        .json({ message: "You are not authorized to block users" });
+    }
     user.isBlocked = false;
     await user.save();
     return res.status(200).json({ message: "User unblocked successfully" });
@@ -252,6 +272,7 @@ export const unblockUser = async (req, res) => {
 
 export const fetchBlockedUsers = async (req, res) => {
   try {
+    
     const blockedUsers = await User.find({ isBlocked: true });
     return res.status(200).json(blockedUsers);
   } catch (error) {

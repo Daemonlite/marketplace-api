@@ -1,6 +1,7 @@
 import jwt from "jsonwebtoken";
+import User from "../models/User";
 
-const verifyToken = (req, res, next) => {
+const verifyToken = async (req, res, next) => {
   try {
     // 1. Check for Authorization header (case-insensitive)
     const authHeader = req.headers.authorization || req.headers.Authorization;
@@ -31,28 +32,47 @@ const verifyToken = (req, res, next) => {
     }
 
     // 4. Verify token
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-      if (err) {
-        // Handle different JWT errors specifically
-        let message = "Invalid token";
-        if (err.name === "TokenExpiredError") {
-          message = "Token expired";
-        } else if (err.name === "JsonWebTokenError") {
-          message = "Malformed token";
-        }
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // 5. Check if user exists and is not blocked
+    const user = await User.findById(decoded.id);
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found",
+      });
+    }
 
-        return res.status(403).json({
-          success: false,
-          message,
-        });
-      }
+    if (user.isBlocked) {
+      return res.status(403).json({
+        success: false,
+        message: "You are blocked by the admin",
+      });
+    }
 
-      // 5. Attach user to request
-      req.user = decoded;
-      next();
-    });
+    // 6. Attach user to request
+    req.user = user; // Attach full user document instead of just decoded token
+    next();
+
   } catch (error) {
     console.error("Token verification error:", error);
+    
+    // Handle specific JWT errors
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token expired",
+      });
+    }
+    
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token",
+      });
+    }
+
     return res.status(500).json({
       success: false,
       message: "Internal server error during authentication",
