@@ -12,6 +12,7 @@ import {
   resetPassword,
   blockUser,
   unblockUser,
+  resendOtp
 } from "../controllers/UserControllers.js";
 
 const ruserRoutes = express.Router();
@@ -21,7 +22,8 @@ ruserRoutes.get("/", verifyToken, fetchUsers);
 ruserRoutes.get("/:id", verifyToken, fetchUserById);
 ruserRoutes.get("/blocked-users", verifyToken, fetchBlockedUsers);
 ruserRoutes.post("/register", registerUser);
-ruserRoutes.post("/verify", verifyUser);
+ruserRoutes.post("/verify-user", verifyUser);
+ruserRoutes.post("/resend-otp", resendOtp);
 ruserRoutes.post("/login", loginUser);
 ruserRoutes.post("/forgot-password", forgotPassword);
 ruserRoutes.post("/verify-user-token", verifyUserToken);

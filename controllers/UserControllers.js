@@ -123,7 +123,8 @@ export const loginUser = async (req, res) => {
 
     const userData = {
       id: user._id,
-      fullName: user.fullName,
+      fullName: user.name,
+      role: user.role,
     };
 
     return res.status(200).json({ token, userData });
@@ -173,6 +174,20 @@ export const verifyUserToken = async (req, res) => {
     }
 
     return res.status(200).json({ message: "User verified successfully" });
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const resendOtp = async (req, res) => {
+  try {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ message: "Email is required" });
+    }
+    await sendOtpLater(email);
+    return res.status(200).json({ message: "OTP sent successfully" });
   } catch (error) {
     console.log(error);
     return res.status(500).json({ message: "Internal server error" });
