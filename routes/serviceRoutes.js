@@ -1,6 +1,6 @@
 import express from "express";
 import verifyToken from "../middlewares/verify.js";
-import {getServices, getServiceById,fetchServiceProviders, fetchUserServices,createService, updateService, deleteService,deleteService} from "../controllers/serviceController.js"
+import {getServices, getServiceById,fetchServiceProviders, fetchUserServices,createService, updateService, deleteService} from "../controllers/serviceController.js"
 
 const serviceRoutes = express.Router();
 

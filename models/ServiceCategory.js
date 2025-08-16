@@ -7,9 +7,9 @@ const serviceCategorySchema = new mongoose.Schema({
     },
     image: {
         type: String,
-        required: true,
+        required: false,
     },
-    
+
 }, { timestamps: true });
 
 const ServiceCategory = mongoose.model("ServiceCategory", serviceCategorySchema);

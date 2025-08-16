@@ -3,8 +3,9 @@ import { setTimeout } from "timers/promises";
 import sendOtp from "../helpers/sendOtp.js";
 import { uploadImage } from "../helpers/uploadImage.js";
 
-// Create a queue
-const taskQueue = new Queue("email queue", process.env.REDIS_CLIENT, {
+// Queue configuration
+const queueOptions = {
+  redis: process.env.REDIS_CLIENT,
   defaultJobOptions: {
     attempts: 3,
     backoff: {
@@ -12,42 +13,78 @@ const taskQueue = new Queue("email queue", process.env.REDIS_CLIENT, {
       delay: 1000,
     },
   },
-});
+};
 
-// Define your processing function
+// Create separate queues
+const otpQueue = new Queue("otp-queue", queueOptions);
+const uploadQueue = new Queue("upload-queue", queueOptions);
+
+// OTP Processor
 const sendOtpLayer = async (job) => {
-  const { to } = job.data;
-  // Your email sending logic here
-  sendOtp(to);
-  console.log(`Sending email to ${to}`);
-  // Simulate work with modern timers/promises
-  await setTimeout(2000);
+  try {
+    const { to } = job.data;
+    await sendOtp(to);
+    console.log(`OTP sent to ${to}`);
+    return { status: "success" };
+  } catch (error) {
+    console.error(`OTP send failed for ${job.data.to}:`, error);
+    throw error; // Will trigger retry
+  }
 };
 
+// Image Upload Processor
 const uploadImageLayer = async (job) => {
-  const { file } = job.data;
-  uploadImage(file);
+  try {
+    const { file } = job.data;
+    const result = await uploadImage(file);
+    console.log(`Image uploaded: ${result.url}`);
+    return result;
+  } catch (error) {
+    console.error("Image upload failed:", error);
+    throw error;
+  }
 };
 
-// Add processor
-taskQueue.process(sendOtpLayer);
-taskQueue.process(uploadImageLayer);
+// Register processors with concurrency
+otpQueue.process(5, sendOtpLayer); // Process up to 5 OTP jobs concurrently
+uploadQueue.process(2, uploadImageLayer); // Process up to 2 uploads concurrently
 
-taskQueue.on("completed", (job) => {
-  console.log(`Job ${job.id} completed`);
-});
+// Event listeners for both queues
+const registerQueueEvents = (queue) => {
+  queue.on("completed", (job) => {
+    console.log(`Job ${job.id} completed`);
+  });
 
-taskQueue.on("failed", (job, err) => {
-  console.error(`Job ${job.id} failed:`, err);
-});
+  queue.on("failed", (job, err) => {
+    console.error(`Job ${job.id} failed:`, err);
+  });
 
-// Create a delayable function (could also be an arrow function)
+  queue.on("error", (err) => {
+    console.error("Queue error:", err);
+  });
+};
+
+registerQueueEvents(otpQueue);
+registerQueueEvents(uploadQueue);
+
+// Job adders
 const sendOtpLater = (to) => {
-  return taskQueue.add({ to });
+  return otpQueue.add({ to });
 };
 
 const uploadImageLater = (file) => {
-  return taskQueue.add({ file });
+  return uploadQueue.add({ file });
 };
 
-export { sendOtpLater, uploadImageLater, taskQueue };
+// Graceful shutdown
+const cleanup = async () => {
+  await Promise.all([
+    otpQueue.close(),
+    uploadQueue.close(),
+  ]);
+};
+
+process.on("SIGTERM", cleanup);
+process.on("SIGINT", cleanup);
+
+export { sendOtpLater, uploadImageLater, otpQueue, uploadQueue };
