@@ -5,6 +5,7 @@ import connectDb from "./config/connect.js";
 import userRoutes from "./routes/userRoutes.js";
 import serviceCategoryRoutes from "./routes/serviceCategoryRoutes.js";
 import serviceRoutes from "./routes/serviceRoutes.js";
+import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import cloudinary from "cloudinary";
 
 
@@ -33,6 +34,8 @@ connectDb();
 app.use("/api/users", userRoutes);
 app.use("/api/service-categories", serviceCategoryRoutes);
 app.use("/api/services", serviceRoutes);
+app.use("/api/service-requests", serviceRequestRoutes);
+
 
 
 
